@@ -86,7 +86,7 @@ let books = [
 const typeDefs = gql`
   type Author {
     name: String!
-    id: ID!
+    id: ID
     born: Int
     bookCount: Int!
   }
@@ -94,7 +94,7 @@ const typeDefs = gql`
     title: String!
     published: Int!
     author: String!
-    id: ID!
+    id: ID
     genres: [String!]!
   }
   type Query {
@@ -102,6 +102,14 @@ const typeDefs = gql`
     authorCount: Int!
     allBooks(author: String, genre: String): [Book!]!
     allAuthors: [Author!]!
+  }
+  type Mutation {
+    addBook(
+      title: String!
+      published: Int!
+      author: String!
+      genres: [String!]!
+    ): Book
   }
 `
 
@@ -139,6 +147,20 @@ const resolvers = {
       const booksWritten = books.filter(book => book.author === root.name)
       return booksWritten.length
     }
+  },
+  Mutation: {
+    addBook: (root, args) => {
+      if(!(authors.find(a => a.name === args.author))){
+        const newAuthor = {
+          name: args.author,
+        }
+        authors = [... authors, newAuthor]
+      }
+      
+      books = [... books, args]
+
+      return args
+    },
   }
 }
 
