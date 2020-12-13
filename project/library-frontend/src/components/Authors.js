@@ -3,9 +3,10 @@ import { useState } from 'react'
 import { useMutation, useQuery } from '@apollo/client'
 import {ALL_AUTHORS} from '../queries'
 import { EDIT_AUTHOR } from '../mutations'
+import Select from 'react-select'
 
 const Authors = (props) => {
-  const [name, setName] = useState('')
+  const [name, setName] = useState(null)
   const [born, setBorn] = useState('')
 
   const authors = useQuery(ALL_AUTHORS)
@@ -21,7 +22,7 @@ const Authors = (props) => {
     console.log(`born: ${born}`)
 
     await editAuthor({
-      variables: { name, born: parseInt(born) }
+      variables: { name: name.value, born: parseInt(born) }
     })
 
     console.log('updating author...')
@@ -37,6 +38,16 @@ const Authors = (props) => {
   } else if (authors.error) {
     return <div>Error retrieving Author data</div>
   }
+  
+  // Callback function to create authors object for the options array
+  const asObject = (author) => {
+    return {
+      value: author.name,
+      label: author.name
+    }
+  }
+
+  const options = authors.data.allAuthors.map(asObject)
 
   return (
     <div>
@@ -65,10 +76,10 @@ const Authors = (props) => {
       <h2>Set birthyear</h2>
       <form onSubmit={submit}>
           <div>
-            name
-            <input
-              value={name}
-              onChange={({ target }) => setName(target.value)}
+            <Select
+              defaultValue={name}
+              onChange={setName}
+              options={options}
             />
           </div>
           <div>
