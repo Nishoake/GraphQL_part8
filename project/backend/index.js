@@ -5,6 +5,8 @@ const Author = require('./models/author')
 
 require('dotenv').config()
 
+
+// Connecting to the Database
 const MONGODB_URI = process.env.MONGODB_URI
 
 console.log('connecting to database')
@@ -17,12 +19,15 @@ mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true,
     console.log('error connection to MongoDB:', error.message)
   })
 
+
+
+// Type Definitions
 const typeDefs = gql`
   type Author {
     name: String!
     id: ID
     born: Int
-    bookCount: Int!
+    bookCount: Int
   }
   type Book {
     title: String!
@@ -51,24 +56,31 @@ const typeDefs = gql`
   }
 `
 
+
+// Resolvers' logic
 const resolvers = {
   Query: {
     bookCount: () => Book.collection.countDocuments(),
+
+
     authorCount: () => Author.collection.countDocuments(),
+
+
     allBooks: async (root, args) => {
-      // Fetch all saved book objects
-      const books = await Book.find({})
+      // Fetch all saved book objects and populate the 'author' field
+      const books = await Book.find({}).populate("author")
       
       // Filter books by author
       async function authorFilter(bookToFilter){
-        const authorBooks = await Book.find({ author: { $in: args.author } })
-        console.log('author filter in progress')
+        const authorBooks = bookToFilter.filter(book => book.author.name === args.author)
+        
         return authorBooks
       }
+
       // Filter books by genre
       async function genreFilter(bookToFilter) {
-        const genreBooks = await Book.find({ genres: { $in: args.genre } })
-        console.log('genre filter in progress')
+        const genreBooks = bookToFilter.filter(book => book.genres.includes(args.genre))
+        
         return genreBooks
       }
 
@@ -76,22 +88,29 @@ const resolvers = {
       if(!args.author && !args.genre){
         return books
       } else if (args.author && args.genre){
-        return genreFilter(authorFilter(books))
+        return genreFilter(await authorFilter(books))
       } else if (args.genre){
         return genreFilter(books)
       }
 
       return authorFilter(books)
     },
+
+
     allAuthors: (root) => Author.find({}),
   },
+
+
+
   Author: {
     bookCount: async (root) => {
-      // const booksWritten = books.filter(book => book.author === root.name)
       const booksWritten = await Book.find({author: {$in: root._id}})
       return booksWritten.length
     }
   },
+
+
+
   Mutation: {
     addBook: async (root, args) => {
       // Search for author
@@ -119,6 +138,8 @@ const resolvers = {
 
       return book.populate("author").execPopulate()
     },
+
+
     editAuthor: async (root, args) => {
 
       let updatedAuthor = await Author.findOne({ name: args.name })
@@ -132,6 +153,8 @@ const resolvers = {
   }
 }
 
+
+// Creating the Apollo Server
 const server = new ApolloServer({
   typeDefs,
   resolvers,
