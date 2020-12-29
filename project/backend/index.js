@@ -1,4 +1,4 @@
-const { ApolloServer, gql } = require('apollo-server')
+const { ApolloServer, UserInputError, gql } = require('apollo-server')
 const mongoose = require('mongoose')
 const Book = require('./models/book')
 const Author = require('./models/author')
@@ -122,21 +122,36 @@ const resolvers = {
           name: args.author
         })
 
-        const savedAuthor = await newAuthor.save()
+        try{
+          const savedAuthor = await newAuthor.save()
 
-        const book = new Book({ ...args, author: savedAuthor._id })
+          const book = new Book({ ...args, author: savedAuthor._id })
+
+          await book.save()
+
+          return book.populate("author").execPopulate()
+
+        } catch(error){
+          throw new UserInputError(error.message, {
+            invalidArgs: args,
+          })
+        }
+      }
+      
+      try{
+        // Use the returned author to assign the ObjectID to the author field
+        const book = new Book({ ...args, author: author._id })
 
         await book.save()
 
         return book.populate("author").execPopulate()
+
+      } catch(error){
+        throw new UserInputError(error.message, {
+          invalidArgs: args,
+        })
       }
-      
-      // Use the returned author to assign the ObjectID to the author field
-      const book = new Book({...args, author: author._id})
 
-      await book.save()
-
-      return book.populate("author").execPopulate()
     },
 
 
@@ -144,8 +159,15 @@ const resolvers = {
 
       let updatedAuthor = await Author.findOne({ name: args.name })
       if (updatedAuthor){
-        updatedAuthor.born = args.setBornTo
-        return await updatedAuthor.save()
+        try{
+          updatedAuthor.born = args.setBornTo
+          return await updatedAuthor.save()
+
+        } catch (error) {
+          throw new UserInputError(error.message, {
+            invalidArgs: args,
+          })
+        }
       }
 
       return null
