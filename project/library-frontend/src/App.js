@@ -55,6 +55,7 @@ const App = () => {
 
       <Authors
         show={page === 'authors'}
+        token={token}
       />
 
       <Books
