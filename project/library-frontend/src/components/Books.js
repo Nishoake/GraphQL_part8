@@ -2,10 +2,10 @@ import React from 'react'
 import { useQuery } from '@apollo/client'
 import { ALL_BOOKS } from '../queries'
 
-const Books = (props) => {
+const Books = ({ show }) => {
   const books = useQuery(ALL_BOOKS)
 
-  if (!props.show) {
+  if (!show) {
     return null
   } else if (books.loading) {
     return <div>loading...</div>

@@ -146,6 +146,7 @@ const resolvers = {
       const currentUser = context.currentUser
 
       if (!currentUser) {
+        console.log('addbook error')
         throw new AuthenticationError("not authenticated")
       }
 

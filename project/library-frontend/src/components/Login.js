@@ -1,47 +1,58 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { LOGIN } from '../queries'
+// import {  } from '../queries'
+import { LOGIN } from '../mutations'
 
-const LoginForm = ({ setError, setToken }) => {
-  // State variables
+const LoginForm = ({ show, setToken, setPage }) => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
-  // Login useMutation Hook
   const [login, result] = useMutation(LOGIN, {
     onError: (error) => {
-      setError(error.graphQLErrors[0].message)
+      console.log(error)
     }
   })
 
-  // After succesful login upddating the state variable, token, and localStorage
   useEffect(() => {
     if (result.data) {
       const token = result.data.login.value
+      console.log(`Login token = ${token}`)
+
       setToken(token)
-      localStorage.setItem('phonenumbers-user-token', token)
+      localStorage.setItem('library-user-token', token)
+
+      setPage('authors')
     }
   }, [result.data]) // eslint-disable-line
-
-  // Event handler for submit function
-  const submit = async (event) => {
+  
+  const submit = async event => {
     event.preventDefault()
+    console.log(`username = ${username}`)
+    console.log(`password = ${password}`)
 
     login({ variables: { username, password } })
+
+    setUsername('')
+    setPassword('')
+    console.log('attempting to login from Login.js')
   }
 
-  // Render section of component
+  if(!show){
+    return null
+  }
+
   return (
     <div>
+      <h2>Login</h2>
       <form onSubmit={submit}>
         <div>
-          username <input
-            value={username}
-            onChange={({ target }) => setUsername(target.value)}
+          name<input 
+            value={username} 
+            onChange={({target}) => setUsername(target.value)}
           />
         </div>
         <div>
-          password <input
+          password<input
             type='password'
             value={password}
             onChange={({ target }) => setPassword(target.value)}
