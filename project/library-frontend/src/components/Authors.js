@@ -38,7 +38,6 @@ const Authors = ({ show, token }) => {
   } else if (authors.error) {
     return <div>Error retrieving Author data</div>
   } else if (!token) {
-    console.log(`the token is: ${token}`)
     return (
       <div>
         <h2>authors</h2>
