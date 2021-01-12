@@ -14,7 +14,7 @@ const Books = ({ show }) => {
     if (books.data){
       setList(books.data.allBooks)
     }
-  }, []) // eslint-disable-line
+  }, [books.data]) // eslint-disable-line
 
   // Conditional handling the useQuery
   if (!show) {
