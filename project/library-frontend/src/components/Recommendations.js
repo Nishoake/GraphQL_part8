@@ -1,56 +1,57 @@
 import React, { useState, useEffect } from 'react'
-import { useQuery } from '@apollo/client'
-import { ALL_BOOKS } from '../queries'
+import { useQuery, useLazyQuery } from '@apollo/client'
+import { ALL_BOOKS, ME } from '../queries'
 
 const Recommendations = ({ show }) => {
   // Defining the state variables
-  // Note: We need to define before the conditional
-  const [selectedGenre, setSelectedGenre] = useState(null)
+  const [genre, setGenre] = useState(null)
   const [list, setList] = useState([])
 
+  // The lazy query to execute allBooks
+  const [getBooks, result] = useLazyQuery(ALL_BOOKS)
 
-  const books = useQuery(ALL_BOOKS)
+  // Function passing in the 'genre' parameter for the allBooks query
+  const getRecommendation = (genre) => {
+    getBooks({ variables: { genre: genre}})
+  }
+
+  // Running the me query to get the favourite genre
+  const user = useQuery(ME)
+
+  // Fetching the me query's data
   useEffect(() => {
-    if (books.data) {
-      setList(books.data.allBooks)
+    if (user.data) {
+      let favoriteGenre = user.data.me.favoriteGenre
+
+      setGenre(favoriteGenre)
+      getRecommendation(favoriteGenre)
     }
-  }, [books.data]) // eslint-disable-line
+  }, [user.data]) // eslint-disable-line
+
+  // Fetching the lazy query's data
+  useEffect(() => {
+    if (result.data) {
+      setList(result.data.allBooks)
+    }
+  }, [result.data]) // eslint-disable-line
+
 
   // Conditional handling the useQuery
   if (!show) {
     return null
-  } else if (books.loading) {
+  } else if (user.loading) {
     return <div>loading...</div>
-  } else if (books.error) {
-    return <div>Error retrieving Book data</div>
+  } else if (user.error) {
+    return <div>Error retrieving User data</div>
   }
 
-  // Created set to save a unique set of genres
-  let genresSet = new Set()
-  books.data.allBooks.map(book => book.genres.map(genre => genresSet.add(genre)))
 
-  //converted the genresSet into an array
-  let uniqueGenres = [...genresSet]
-
-  // event handler for filter
-  const filterBooks = (genre) => {
-    let shortList = books.data.allBooks.filter(book => book.genres.includes(genre))
-
-    setSelectedGenre(genre)
-    setList(shortList)
-  }
-
-  // event handler for All Genres
-  const reset = () => {
-    setList(books.data.allBooks)
-    setSelectedGenre(null)
-  }
 
   // RENDERING
   return (
     <div>
-      <h2>books</h2>
-      <p>In genre: <b>{selectedGenre}</b></p>
+      <h2>Recommendations</h2>
+      <p>Books in your favourite genre: <b>{genre}</b></p>
 
       <table>
         <tbody>
@@ -74,10 +75,6 @@ const Recommendations = ({ show }) => {
           )}
         </tbody>
       </table>
-      {uniqueGenres.map(genre =>
-        <button key={genre} type='button' onClick={() => filterBooks(genre)}>{genre}</button>
-      )}
-      <button type='button' onClick={() => reset()}>All Genres</button>
     </div>
   )
 
